@@ -1,74 +1,132 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StadiumMap } from '../components/StadiumMap';
-
-export const MOCK_INCIDENTS = [
-  { id: 'INC-1', type: 'MEDICAL', title: 'Fan collapsed near Section 204', time: '2 min ago', severity: 'critical', triage: 'Recommend PB-HEAT-STROKE. Nearest team MT-07 is 95s away.' },
-  { id: 'INC-2', type: 'CROWD', title: 'Dense bottleneck at Gate East', time: '5 min ago', severity: 'high', triage: 'Recommend rerouting incoming fans to Gate North. Adjust digital signage.' },
-  { id: 'INC-3', type: 'FACILITY', title: 'Spill reported in Concourse B', time: '12 min ago', severity: 'low', triage: 'Janitorial staff dispatched. Expected resolution 5m.' },
-  { id: 'INC-4', type: 'SECURITY', title: 'Lost child at Info Desk 3', time: '14 min ago', severity: 'moderate', triage: 'Security team ST-02 engaged. Waiting for parents.' },
-  { id: 'INC-5', type: 'CROWD', title: 'South Escalators over capacity', time: '18 min ago', severity: 'critical', triage: 'Recommend PB-CROWD-SURGE. Pause escalator entry.' },
-  { id: 'INC-6', type: 'MEDICAL', title: 'Minor scrape reported', time: '22 min ago', severity: 'low', triage: 'Fan directed to First Aid Station.' },
-];
+import { SituationReport } from '../components/dashboard/SituationReport';
+import { NOCStats } from '../components/dashboard/NOCDashboard';
+import { IncidentCard } from '../components/incidents/IncidentCard';
+import { TriagePanel } from '../components/incidents/TriagePanel';
+import { Modal } from '../components/common/Modal';
+import { useCrowd } from '../hooks/useCrowd';
+import { useIncidentStore } from '../stores/incidentStore';
+import { getMockIncidents } from '../services/api';
+import type { Incident, Zone } from '../types';
 
 export const Dashboard: React.FC = () => {
+  const { zones, overallStatus, totalOccupancy } = useCrowd();
+  const { incidents, setIncidents, getFilteredIncidents, getActiveCount, getCriticalCount, getAvgResponseTime } = useIncidentStore();
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [selectedZone, setSelectedZone] = useState<Zone | null>(null);
+
+  useEffect(() => {
+    if (incidents.length === 0) {
+      setIncidents(getMockIncidents());
+    }
+  }, [incidents.length, setIncidents]);
+
+  const filtered = getFilteredIncidents();
+  const activeCount = getActiveCount();
+  const criticalCount = getCriticalCount();
+  const avgResponse = getAvgResponseTime();
+
   return (
-    <div className="flex-1 w-full max-w-[1600px] mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
-      {/* Left Column: Map (7/12 = ~58%) */}
-      <div className="lg:col-span-7 flex flex-col h-full overflow-hidden">
-        <StadiumMap />
+    <div className="flex-1 w-full max-w-[1800px] mx-auto p-3 lg:p-5 flex flex-col gap-4 overflow-hidden">
+      {/* Situation Report Bar */}
+      <div className="glass-card px-5 py-3 shrink-0">
+        <SituationReport
+          overallStatus={overallStatus}
+          totalOccupancy={totalOccupancy}
+          activeIncidents={activeCount}
+        />
       </div>
 
-      {/* Right Column: AI Triage & Timeline (5/12 = ~42%) */}
-      <div className="lg:col-span-5 flex flex-col h-full overflow-hidden">
-        <div className="bg-slate-900 rounded-xl shadow-2xl border border-slate-800 flex flex-col h-full">
-          <div className="p-5 border-b border-slate-800 shrink-0">
-            <h3 className="font-bold text-lg text-slate-100 flex items-center gap-3">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+      {/* KPI Stats Row */}
+      <NOCStats
+        totalOccupancy={totalOccupancy}
+        activeIncidents={activeCount}
+        criticalCount={criticalCount}
+        avgResponseTime={avgResponse}
+        className="shrink-0"
+      />
+
+      {/* Main Content: Map + Incidents */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 overflow-hidden">
+        {/* Map */}
+        <div className="lg:col-span-7 min-h-[400px] overflow-hidden">
+          <StadiumMap
+            zones={zones}
+            onZoneClick={(z) => setSelectedZone(z)}
+          />
+        </div>
+
+        {/* Live Incidents */}
+        <div className="lg:col-span-5 flex flex-col glass-card overflow-hidden">
+          <div className="p-4 border-b border-slate-800/60 shrink-0">
+            <h3 className="font-bold text-base text-slate-100 flex items-center gap-2">
+              <span className="status-dot status-dot-red" />
+              Live Incidents
+              <span className="ml-auto text-xs font-mono-data text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">
+                {activeCount} active
               </span>
-              Live Incidents Tracker
             </h3>
           </div>
-          
-          {/* Scrollable list area */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar">
-            {MOCK_INCIDENTS.map((inc) => (
-              <button
-                key={inc.id}
-                className={`w-full text-left p-4 rounded-lg border-l-4 transition-all hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
-                  inc.severity === 'critical' ? 'bg-red-950/20 border-l-red-500 border border-t-red-900/30 border-r-red-900/30 border-b-red-900/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' :
-                  inc.severity === 'high' ? 'bg-orange-950/20 border-l-orange-500 border border-t-orange-900/30 border-r-orange-900/30 border-b-orange-900/30' :
-                  inc.severity === 'moderate' ? 'bg-slate-800/50 border-l-yellow-500 border border-transparent' :
-                  'bg-slate-800/30 border-l-slate-600 border border-transparent opacity-80'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                    inc.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
-                    inc.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                    'bg-slate-700 text-slate-300'
-                  }`}>
-                    {inc.type}
-                  </span>
-                  <span className="text-xs text-slate-400 font-medium">{inc.time}</span>
-                </div>
-                <p className={`font-semibold mb-3 ${
-                  inc.severity === 'critical' ? 'text-red-50' : 'text-slate-200'
-                }`}>
-                  {inc.title}
-                </p>
-                <div className="p-2.5 bg-slate-950/50 rounded-md border border-slate-800/80">
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    <strong className="text-blue-400 font-bold mr-1">AI Triage:</strong> 
-                    {inc.triage}
-                  </p>
-                </div>
-              </button>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            {filtered.map((inc, i) => (
+              <div key={inc.id} className="animate-slide-in-up" style={{ animationDelay: `${i * 60}ms` }}>
+                <IncidentCard
+                  incident={inc}
+                  compact
+                  onClick={(inc) => setSelectedIncident(inc)}
+                />
+              </div>
             ))}
+            {filtered.length === 0 && (
+              <div className="text-center py-12 text-slate-500 text-sm">No active incidents</div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Incident Detail Modal */}
+      <Modal
+        isOpen={!!selectedIncident}
+        onClose={() => setSelectedIncident(null)}
+        title={selectedIncident?.title || ''}
+        description={`${selectedIncident?.type} • ${selectedIncident?.severity?.toUpperCase()}`}
+        size="lg"
+      >
+        {selectedIncident && (
+          <TriagePanel
+            incident={selectedIncident}
+            onDispatch={() => setSelectedIncident(null)}
+            onEscalate={() => setSelectedIncident(null)}
+            onResolve={() => setSelectedIncident(null)}
+          />
+        )}
+      </Modal>
+
+      {/* Zone Detail Modal */}
+      <Modal
+        isOpen={!!selectedZone}
+        onClose={() => setSelectedZone(null)}
+        title={selectedZone?.name || ''}
+        description={`Zone ${selectedZone?.zone_id}`}
+      >
+        {selectedZone && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-400">Current Density:</span>
+              <span className={`text-sm font-bold uppercase ${
+                selectedZone.density_bucket === 'critical' ? 'text-red-400' :
+                selectedZone.density_bucket === 'high' ? 'text-orange-400' :
+                selectedZone.density_bucket === 'moderate' ? 'text-amber-400' : 'text-emerald-400'
+              }`}>{selectedZone.density_bucket}</span>
+            </div>
+            <div className="p-3 bg-slate-800/40 rounded-lg border border-slate-800 text-sm text-slate-300">
+              <p>Coordinates: ({selectedZone.x}, {selectedZone.y})</p>
+              <p className="mt-1">Last updated: {selectedZone.updated_at || 'Live'}</p>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

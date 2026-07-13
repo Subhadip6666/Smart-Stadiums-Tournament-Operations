@@ -1,101 +1,107 @@
-import React, { useState } from 'react';
-import { MOCK_INCIDENTS } from './Dashboard';
+import React, { useEffect, useState } from 'react';
+import { IncidentCard } from '../components/incidents/IncidentCard';
+import { TriagePanel } from '../components/incidents/TriagePanel';
+import { Timeline } from '../components/incidents/Timeline';
+import { Modal } from '../components/common/Modal';
+import { useIncidentStore } from '../stores/incidentStore';
+import { getMockIncidents } from '../services/api';
+import type { Incident, IncidentSeverity, IncidentType } from '../types';
+import { AlertTriangle } from 'lucide-react';
 
 export const Incidents: React.FC = () => {
-  const [filterSeverity, setFilterSeverity] = useState('ALL');
-  const [filterType, setFilterType] = useState('ALL');
+  const { incidents, setIncidents, filters, setFilter, getFilteredIncidents, getActiveCount, getCriticalCount } = useIncidentStore();
+  const [selected, setSelected] = useState<Incident | null>(null);
 
-  const filteredIncidents = MOCK_INCIDENTS.filter((inc) => {
-    if (filterSeverity !== 'ALL' && inc.severity.toLowerCase() !== filterSeverity.toLowerCase()) return false;
-    if (filterType !== 'ALL' && inc.type.toUpperCase() !== filterType.toUpperCase()) return false;
-    return true;
-  });
+  useEffect(() => {
+    if (incidents.length === 0) setIncidents(getMockIncidents());
+  }, [incidents.length, setIncidents]);
+
+  const filtered = getFilteredIncidents();
 
   return (
-    <div className="flex-1 w-full max-w-[1600px] mx-auto p-4 lg:p-6 overflow-hidden flex flex-col">
-      <div className="bg-slate-900 rounded-xl shadow-2xl border border-slate-800 flex flex-col h-full overflow-hidden">
-        
-        {/* Header & Filters */}
-        <div className="p-6 border-b border-slate-800 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-100">Incident Feed</h2>
-            <p className="text-sm text-slate-400 mt-1">Full historical and active incident tracker.</p>
+    <div className="flex-1 w-full max-w-[1600px] mx-auto p-3 lg:p-5 overflow-hidden flex flex-col gap-4">
+      <div className="glass-card flex flex-col h-full overflow-hidden">
+        {/* Header */}
+        <div className="p-5 border-b border-slate-800/60 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-amber-600/15 flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5 text-amber-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-100">Incident Feed</h2>
+              <p className="text-xs text-slate-400">
+                {getActiveCount()} active • {getCriticalCount()} critical
+              </p>
+            </div>
           </div>
-          <div className="flex gap-4">
-            <select 
-              className="bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-md px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-              value={filterSeverity}
-              onChange={(e) => setFilterSeverity(e.target.value)}
+          <div className="flex gap-3">
+            <select
+              className="bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              value={filters.severity}
+              onChange={(e) => setFilter('severity', e.target.value)}
             >
-              <option value="ALL">All Severities</option>
-              <option value="CRITICAL">Critical</option>
-              <option value="HIGH">High</option>
-              <option value="MODERATE">Moderate</option>
-              <option value="LOW">Low</option>
+              <option value="ALL" className="bg-slate-900">All Severities</option>
+              <option value="critical" className="bg-slate-900">Critical</option>
+              <option value="high" className="bg-slate-900">High</option>
+              <option value="moderate" className="bg-slate-900">Moderate</option>
+              <option value="low" className="bg-slate-900">Low</option>
             </select>
-            <select 
-              className="bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-md px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
+            <select
+              className="bg-slate-800/60 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              value={filters.type}
+              onChange={(e) => setFilter('type', e.target.value)}
             >
-              <option value="ALL">All Types</option>
-              <option value="MEDICAL">Medical</option>
-              <option value="CROWD">Crowd</option>
-              <option value="SECURITY">Security</option>
-              <option value="FACILITY">Facility</option>
+              <option value="ALL" className="bg-slate-900">All Types</option>
+              <option value="MEDICAL" className="bg-slate-900">Medical</option>
+              <option value="CROWD" className="bg-slate-900">Crowd</option>
+              <option value="SECURITY" className="bg-slate-900">Security</option>
+              <option value="FACILITY" className="bg-slate-900">Facility</option>
             </select>
           </div>
         </div>
-        
-        {/* Scrollable list area */}
-        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-          <div className="space-y-4">
-            {filteredIncidents.length > 0 ? (
-              filteredIncidents.map((inc) => (
-                <div
-                  key={inc.id}
-                  className={`w-full text-left p-5 rounded-lg border-l-4 transition-all hover:bg-slate-800/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
-                    inc.severity === 'critical' ? 'bg-red-950/20 border-l-red-500 border border-t-red-900/30 border-r-red-900/30 border-b-red-900/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]' :
-                    inc.severity === 'high' ? 'bg-orange-950/20 border-l-orange-500 border border-t-orange-900/30 border-r-orange-900/30 border-b-orange-900/30' :
-                    inc.severity === 'moderate' ? 'bg-slate-800/50 border-l-yellow-500 border border-transparent' :
-                    'bg-slate-800/30 border-l-slate-600 border border-transparent opacity-80'
-                  }`}
-                  tabIndex={0}
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex gap-3 items-center">
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded uppercase tracking-wider ${
-                        inc.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
-                        inc.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                        'bg-slate-700 text-slate-300'
-                      }`}>
-                        {inc.type}
-                      </span>
-                      <span className="text-sm text-slate-400 font-medium">ID: {inc.id}</span>
-                    </div>
-                    <span className="text-sm text-slate-400 font-medium">{inc.time}</span>
-                  </div>
-                  <p className={`font-bold text-lg mb-4 ${
-                    inc.severity === 'critical' ? 'text-red-50' : 'text-slate-200'
-                  }`}>
-                    {inc.title}
-                  </p>
-                  <div className="p-3 bg-slate-950/50 rounded-md border border-slate-800/80">
-                    <p className="text-sm text-slate-300 leading-relaxed">
-                      <strong className="text-blue-400 font-bold mr-2">AI Triage Recommendation:</strong> 
-                      {inc.triage}
-                    </p>
-                  </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-hidden flex">
+          {/* Incident List */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-3 custom-scrollbar">
+            {filtered.length > 0 ? (
+              filtered.map((inc, i) => (
+                <div key={inc.id} className="animate-slide-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+                  <IncidentCard incident={inc} onClick={(i) => setSelected(i)} />
                 </div>
               ))
             ) : (
-              <div className="text-center py-20 text-slate-500">
+              <div className="text-center py-20 text-slate-500 text-sm">
                 No incidents match the selected filters.
               </div>
             )}
           </div>
+
+          {/* Timeline Sidebar (desktop only) */}
+          <div className="hidden xl:block w-64 border-l border-slate-800/60 p-4 overflow-y-auto custom-scrollbar">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Timeline</h4>
+            <Timeline incidents={incidents} maxItems={10} />
+          </div>
         </div>
       </div>
+
+      {/* Detail Modal */}
+      <Modal
+        isOpen={!!selected}
+        onClose={() => setSelected(null)}
+        title={selected?.title || ''}
+        description={`${selected?.type} • ${selected?.severity?.toUpperCase()} • ${selected?.id}`}
+        size="lg"
+      >
+        {selected && (
+          <TriagePanel
+            incident={selected}
+            onDispatch={() => setSelected(null)}
+            onEscalate={() => setSelected(null)}
+            onResolve={() => setSelected(null)}
+          />
+        )}
+      </Modal>
     </div>
   );
 };
