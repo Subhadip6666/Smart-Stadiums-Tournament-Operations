@@ -14,7 +14,7 @@ export const NavigatePage: React.FC = () => {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [mode, setMode] = useState<NavigationMode>('shortest');
-  const { route, isLoading, error, findRoute, clearRoute } = useRoute();
+  const { route, isLoading, error, findRoute } = useRoute();
 
   const handleFind = () => {
     if (from && to) findRoute(from, to, mode);

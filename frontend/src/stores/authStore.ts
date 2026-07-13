@@ -32,7 +32,7 @@ function generateDemoToken(): string {
   return `${header}.${payload}.${signature}`;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   user: null,
   isAuthenticated: false,

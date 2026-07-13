@@ -324,7 +324,7 @@ const AI_RESPONSES: Record<string, string> = {
   ru: "Ближайший туалет находится в Северном коридоре, секция 108. Это примерно 2 минуты ходьбы от вашего текущего местоположения.",
 };
 
-export function getMockChatResponse(message: string, language: string): ChatResponse {
+export function getMockChatResponse(_message: string, language: string): ChatResponse {
   return {
     session_id: 'demo-session',
     reply: AI_RESPONSES[language] || AI_RESPONSES['en'],

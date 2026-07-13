@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
 import type { RouteResult } from '../../types';
-import { MapPin, Navigation, Accessibility } from 'lucide-react';
+import { Navigation, Accessibility } from 'lucide-react';
 
 interface RouteMapProps {
   route: RouteResult;
@@ -73,7 +73,7 @@ export const RouteMap: React.FC<RouteMapProps> = ({ route, className }) => {
                 {seg.name.length > 18 ? seg.name.slice(0, 16) + '…' : seg.name}
               </text>
               <text x={p.x} y={p.y + (i % 2 === 0 ? -8 : 40)} textAnchor="middle"
-                fill="#64748b" fontSize="9" fontFamily="'JetBrains Mono', monospace" textTransform="uppercase">
+                fill="#64748b" fontSize="9" fontFamily="'JetBrains Mono', monospace" style={{ textTransform: 'uppercase' }}>
                 {seg.type}
               </text>
             </g>

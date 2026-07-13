@@ -26,10 +26,11 @@ export const Spinner: React.FC<LoaderProps> = ({ size = 'md', className }) => {
   );
 };
 
-export const Skeleton: React.FC<{ className?: string }> = ({ className }) => {
+export const Skeleton: React.FC<{ className?: string, style?: React.CSSProperties }> = ({ className, style }) => {
   return (
     <div
       className={cn('animate-pulse rounded-lg bg-slate-800/60', className)}
+      style={style}
     />
   );
 };

@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Send } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { Button } from '../common/Button';
-import type { ChatMessage, SupportedLanguage } from '../../types';
+import type { ChatMessage } from '../../types';
 
 interface ChatWindowProps {
   messages: ChatMessage[];

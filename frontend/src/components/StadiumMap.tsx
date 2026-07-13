@@ -127,7 +127,7 @@ export const StadiumMap: React.FC<StadiumMapProps> = ({ zones, onZoneClick, clas
               <text x={lx + 14} y={ly + 17} fill="#f1f5f9" fontSize="11" fontWeight="600" fontFamily="Inter, sans-serif">
                 {zone.name.length > 16 ? zone.name.slice(0, 14) + '…' : zone.name}
               </text>
-              <text x={lx + 14} y={ly + 32} fill={colors.stroke} fontSize="10" fontWeight="600" fontFamily="'JetBrains Mono', monospace" textTransform="uppercase">
+              <text x={lx + 14} y={ly + 32} fill={colors.stroke} fontSize="10" fontWeight="600" fontFamily="'JetBrains Mono', monospace" style={{ textTransform: 'uppercase' }}>
                 {zone.density_bucket}
               </text>
             </g>

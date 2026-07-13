@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
 import type { RouteResult } from '../../types';
-import { ArrowRight, Accessibility } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 interface WayfindingPanelProps {
   route: RouteResult;

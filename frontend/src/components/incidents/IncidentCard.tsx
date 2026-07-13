@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
-import { AlertTriangle, Heart, Users, Wrench, Shield } from 'lucide-react';
+import { Heart, Users, Wrench, Shield } from 'lucide-react';
 import type { Incident, IncidentType, IncidentSeverity } from '../../types';
 
 interface IncidentCardProps {

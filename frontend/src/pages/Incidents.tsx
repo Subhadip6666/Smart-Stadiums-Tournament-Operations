@@ -5,7 +5,7 @@ import { Timeline } from '../components/incidents/Timeline';
 import { Modal } from '../components/common/Modal';
 import { useIncidentStore } from '../stores/incidentStore';
 import { getMockIncidents } from '../services/api';
-import type { Incident, IncidentSeverity, IncidentType } from '../types';
+import type { Incident } from '../types';
 import { AlertTriangle } from 'lucide-react';
 
 export const Incidents: React.FC = () => {

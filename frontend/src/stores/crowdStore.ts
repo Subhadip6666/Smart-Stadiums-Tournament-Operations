@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import type { Zone, DensityBucket, CrowdUpdate } from '../types';
-import { DENSITY_ORDER } from '../types';
 
 interface CrowdState {
   zones: Zone[];

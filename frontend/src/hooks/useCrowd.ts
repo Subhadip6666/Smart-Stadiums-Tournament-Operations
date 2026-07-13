@@ -1,9 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useCrowdStore } from '../stores/crowdStore';
 import { getStaticMockZones } from '../services/api';
-import type { Zone, DensityBucket } from '../types';
+import type { DensityBucket } from '../types';
 
-const DENSITY_BUCKETS: DensityBucket[] = ['low', 'moderate', 'high', 'critical'];
 
 /**
  * Hook that drives the crowd density data for the stadium map.
