@@ -1,0 +1,33 @@
+name: CD Staging
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/github/providers/my-repo'
+        service_account: 'sa-cicd@stadiumai-project.iam.gserviceaccount.com'
+    
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Deploy Backend to Cloud Run
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: stadiumai-backend-staging
+        source: ./backend
+        region: asia-south1
+        
+    - name: Deploy Frontend to Cloud Run
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: stadiumai-frontend-staging
+        source: ./frontend
+        region: asia-south1
