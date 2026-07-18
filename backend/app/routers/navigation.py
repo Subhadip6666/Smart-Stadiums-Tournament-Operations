@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from neo4j import AsyncDriver
 from typing import Optional
-from app.dependencies import get_neo4j_driver, verify_token
+from app.dependencies import get_neo4j_driver
 from app.models.schemas import StandardResponse, RouteResponse
 from app.graph.queries import SHORTEST_PATH_QUERY, ACCESSIBLE_PATH_QUERY
 
-router = APIRouter(dependencies=[Depends(verify_token)])
+# Public endpoint — fans use wayfinding without auth.
+router = APIRouter()
 
 @router.get("/route", response_model=StandardResponse)
 async def get_route(

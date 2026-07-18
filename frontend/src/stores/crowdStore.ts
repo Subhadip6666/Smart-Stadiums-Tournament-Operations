@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Zone, DensityBucket, CrowdUpdate } from '../types';
+import { getStaticMockZones } from '../services/api';
 
 interface CrowdState {
   zones: Zone[];
@@ -11,6 +12,7 @@ interface CrowdState {
   updateZone: (zoneId: string, density: DensityBucket) => void;
   handleCrowdUpdate: (update: CrowdUpdate) => void;
   setConnected: (connected: boolean) => void;
+  subscribeToHeatmap: (stadiumId: string) => () => void;
 
   // Selectors
   getZoneById: (zoneId: string) => Zone | undefined;
@@ -38,24 +40,54 @@ export const useCrowdStore = create<CrowdState>((set, get) => ({
 
   handleCrowdUpdate: (update) => {
     const { zones: currentZones } = get();
+    // Ensure initial static coordinates/names are loaded if they are missing
+    const baseZones = currentZones.length > 0 ? currentZones : getStaticMockZones();
     const updatedMap = new Map(update.zones.map((z) => [z.zone_id, z]));
 
-    const merged = currentZones.map((z) => {
+    const merged = baseZones.map((z) => {
       const updated = updatedMap.get(z.zone_id);
       return updated ? { ...z, ...updated } : z;
-    });
-
-    // Add any new zones not in current state
-    update.zones.forEach((uz) => {
-      if (!currentZones.find((z) => z.zone_id === uz.zone_id)) {
-        merged.push(uz);
-      }
     });
 
     set({ zones: merged, lastUpdated: new Date() });
   },
 
   setConnected: (connected) => set({ isConnected: connected }),
+
+  subscribeToHeatmap: (stadiumId) => {
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const url = `${API_BASE}/v1/crowd/heatmap?stadium_id=${encodeURIComponent(stadiumId)}`;
+    
+    // Initialize base zones with mock coordinates/names if currently empty
+    if (get().zones.length === 0) {
+      set({ zones: getStaticMockZones() });
+    }
+
+    const eventSource = new EventSource(url);
+
+    eventSource.onopen = () => {
+      set({ isConnected: true });
+    };
+
+    eventSource.addEventListener('density_update', (event) => {
+      try {
+        console.log('SSE [density_update] event received:', event.data);
+        const data = JSON.parse(event.data) as CrowdUpdate;
+        get().handleCrowdUpdate(data);
+      } catch (err) {
+        console.error('Error parsing SSE crowd update:', err);
+      }
+    });
+
+    eventSource.onerror = () => {
+      set({ isConnected: false });
+    };
+
+    return () => {
+      eventSource.close();
+      set({ isConnected: false });
+    };
+  },
 
   getZoneById: (zoneId) => get().zones.find((z) => z.zone_id === zoneId),
 

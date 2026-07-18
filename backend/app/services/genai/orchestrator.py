@@ -28,7 +28,7 @@ class GenAIOrchestrator:
             safe_message = sanitize_input(message)
             prompt = f"User asks in {language}: {safe_message}"
             response = self.client.models.generate_content(
-                model='gemini-2.5-flash',
+                model='gemini-3.5-flash',
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=self.system_instruction,

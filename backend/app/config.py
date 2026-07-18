@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     
     # Auth
     jwt_secret: str
+    demo_account_username: str = "noc_operator"
+    demo_account_password_hash: str
     
     # CORS
     cors_origins: str = "http://localhost:5173"

@@ -43,3 +43,4 @@ Thumbs.db
 *.tfvars
 secrets.json
 secrets/
+.github

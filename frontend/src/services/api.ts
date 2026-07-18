@@ -13,7 +13,10 @@ import type {
   HealthStatus,
   NavigationMode,
   Incident,
+  LoginRequest,
+  LoginResponse,
 } from '../types';
+import { useAuthStore } from '../stores/authStore';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -23,12 +26,14 @@ async function request<T>(
   method: string,
   path: string,
   body?: unknown,
-  token?: string | null
+  overrideToken?: string | null
 ): Promise<StandardResponse<T>> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
 
+  const token = overrideToken !== undefined ? overrideToken : useAuthStore.getState().token;
+  
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -50,30 +55,32 @@ async function request<T>(
 // ── API Endpoints ─────────────────────────────────────────────
 
 export const api = {
+  // Auth
+  login: (data: LoginRequest) =>
+    request<LoginResponse>('POST', '/v1/auth/login', data, null), // don't send token for login
+
   // Health
   health: () => request<{ status: string }>('GET', '/health'),
   ready: () => request<HealthStatus>('GET', '/ready'),
 
   // Crowd
-  getZoneDensity: (zoneId: string, token?: string | null) =>
-    request<Zone>('GET', `/v1/crowd/zone/${zoneId}`, undefined, token),
+  getZoneDensity: (zoneId: string) =>
+    request<Zone>('GET', `/v1/crowd/zone/${zoneId}`),
 
   // Navigation
-  getRoute: (from: string, to: string, stadiumId: string, mode: NavigationMode = 'shortest', token?: string | null) =>
+  getRoute: (from: string, to: string, stadiumId: string, mode: NavigationMode = 'shortest') =>
     request<RouteResult>(
       'GET',
-      `/v1/navigate/route?from_id=${encodeURIComponent(from)}&to_id=${encodeURIComponent(to)}&stadium_id=${encodeURIComponent(stadiumId)}&mode=${mode}`,
-      undefined,
-      token
+      `/v1/navigate/route?from_id=${encodeURIComponent(from)}&to_id=${encodeURIComponent(to)}&stadium_id=${encodeURIComponent(stadiumId)}&mode=${mode}`
     ),
 
   // Chat
-  sendMessage: (data: ChatRequest, token?: string | null) =>
-    request<ChatResponse>('POST', '/v1/chat/message', data, token),
+  sendMessage: (data: ChatRequest) =>
+    request<ChatResponse>('POST', '/v1/chat/message', data),
 
   // Incidents
-  createIncident: (data: IncidentCreateRequest, token?: string | null) =>
-    request<unknown>('POST', '/v1/incidents', data, token),
+  createIncident: (data: IncidentCreateRequest) =>
+    request<unknown>('POST', '/v1/incidents', data),
 };
 
 // ── SSE Connection Factory ────────────────────────────────────

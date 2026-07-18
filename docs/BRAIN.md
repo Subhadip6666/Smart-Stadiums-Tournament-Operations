@@ -174,6 +174,10 @@ Project-4/
 
 `2026-07-12 — [docs/BRAIN.md] — [Corrected and backfilled BRAIN.md (v2)] — [Added security remediation history, corrected GCP project ID to unconfirmed, elevated critical unverified items, added decisions log entries, re-scanned iam/main.tf to confirm redis.editor and sa-runtime-only state, backfilled known issues with 4 security items] — [verified: yes, by re-reading all Terraform modules, backend code, .gitignore, workflows, and architecture blueprint]`
 
+`2026-07-13 — [Multiple] — [Implemented Minimal Auth Flow] — [Added passlib/bcrypt, created /v1/auth/login, updated dependencies.py to strictly verify JWT. Frontend: added LoginPage, updated api.ts to inject token, updated authStore.ts] — [verified: yes, via e2e test: unauthenticated access redirects to /login, invalid creds return 401, valid creds redirect to dashboard and protected routes return 200]`
+
+`2026-07-15 — [Multiple] — [Implemented Tiered Access Control (Public Fan vs Staff Auth)] — [Routes reclassified: GET /v1/crowd/heatmap, GET /v1/crowd/zone/{id}, GET /v1/navigate/route, POST /v1/chat/message → PUBLIC (no verify_token). POST /v1/incidents → remains JWT-protected. Rate limiter rewritten with tiered limits (30/min public, 200/min staff), TTL-based cleanup (fixes memory leak), Retry-After headers. Chat endpoint gains 500-char input length limit. Guardrails call path verified: router→orchestrator→sanitize_input()→Gemini→validate_output(). Frontend: App.tsx restructured with ProtectedRoute guard, staff nav hidden for unauth'd users, default home is /fan not /login.] — [verified: yes, via verify_tiered_access.py (7/7 passed): crowd zone 200, navigate not-401, chat 200, incidents 401, 501-char chat 400, 500-char chat 200, rate limit 429 at req #26. Browser e2e: fan home loads without auth, staff nav hidden, /dashboard redirects to /login, login shows staff nav + dashboard]`
+
 ---
 
 ## 6. Environment & Secrets Map (names only, never values)

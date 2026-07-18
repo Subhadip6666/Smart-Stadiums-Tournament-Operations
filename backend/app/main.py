@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 import time
 import uuid
 import logging
-from app.routers import navigation, crowd, chat, incidents, health
+from app.routers import navigation, crowd, chat, incidents, health, auth
 from app.config import settings
 
 from contextlib import asynccontextmanager
@@ -76,5 +76,6 @@ app.include_router(navigation.router, prefix="/v1/navigate", tags=["Navigation"]
 app.include_router(crowd.router, prefix="/v1/crowd", tags=["Crowd"])
 app.include_router(chat.router, prefix="/v1/chat", tags=["Chat"])
 app.include_router(incidents.router, prefix="/v1/incidents", tags=["Incidents"])
+app.include_router(auth.router, prefix="/v1/auth", tags=["Auth"])
 
 # Lifespan/Shutdown logic for Neo4j (M-03 fix) will be added here via lifespan context manager later.

@@ -100,6 +100,11 @@ export const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
   hi: 'हिन्दी',
 };
 
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -108,6 +113,11 @@ export interface ChatMessage {
   timestamp: string;
   confidence?: number;
   sources?: string[];
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
 }
 
 export interface ChatRequest {

@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { RouteResult, NavigationMode } from '../types';
 import { api, getMockRoute } from '../services/api';
-import { useAuthStore } from '../stores/authStore';
 
 interface UseRouteReturn {
   route: RouteResult | null;
@@ -15,8 +14,6 @@ export function useRoute(): UseRouteReturn {
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const token = useAuthStore((s) => s.token);
-
   const findRoute = useCallback(
     async (from: string, to: string, mode: NavigationMode = 'shortest') => {
       if (!from || !to || from === to) {
@@ -30,7 +27,7 @@ export function useRoute(): UseRouteReturn {
 
       try {
         // Try real API
-        const response = await api.getRoute(from, to, 'metlife-stadium', mode, token);
+        const response = await api.getRoute(from, to, 'metlife-stadium', mode);
         setRoute(response.data as RouteResult);
       } catch {
         // Fall back to mock
@@ -41,7 +38,7 @@ export function useRoute(): UseRouteReturn {
         setIsLoading(false);
       }
     },
-    [token]
+    []
   );
 
   const clearRoute = useCallback(() => {

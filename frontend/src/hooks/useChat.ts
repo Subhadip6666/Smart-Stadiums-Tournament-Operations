@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { ChatMessage, SupportedLanguage, ChatResponse } from '../types';
 import { api, getMockChatResponse } from '../services/api';
-import { useAuthStore } from '../stores/authStore';
 
 interface UseChatReturn {
   messages: ChatMessage[];
@@ -17,8 +16,6 @@ export function useChat(): UseChatReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionId] = useState(() => `sess-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
-  const token = useAuthStore((s) => s.token);
-
   const sendMessage = useCallback(
     async (text: string, language: SupportedLanguage) => {
       if (!text.trim()) return;
@@ -39,8 +36,7 @@ export function useChat(): UseChatReturn {
       try {
         // Try real API first
         const response = await api.sendMessage(
-          { session_id: sessionId, message: text, language },
-          token
+          { session_id: sessionId, message: text, language }
         );
 
         const data = response.data as ChatResponse;
@@ -78,7 +74,7 @@ export function useChat(): UseChatReturn {
         setIsLoading(false);
       }
     },
-    [sessionId, token]
+    [sessionId]
   );
 
   const clearMessages = useCallback(() => {
