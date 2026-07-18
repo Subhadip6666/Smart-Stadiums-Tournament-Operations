@@ -56,7 +56,7 @@ export const useCrowdStore = create<CrowdState>((set, get) => ({
   setConnected: (connected) => set({ isConnected: connected }),
 
   subscribeToHeatmap: (stadiumId) => {
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '');
     const url = `${API_BASE}/v1/crowd/heatmap?stadium_id=${encodeURIComponent(stadiumId)}`;
     
     // Initialize base zones with mock coordinates/names if currently empty
