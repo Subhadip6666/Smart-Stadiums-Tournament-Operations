@@ -1,5 +1,6 @@
-from fastapi import APIRouter
-from app.graph.driver import Neo4jDriver
+from fastapi import APIRouter, Depends
+from neo4j import AsyncDriver
+from app.dependencies import get_neo4j_driver
 from app.models.schemas import StandardResponse
 import logging
 
@@ -12,12 +13,11 @@ async def health_check():
     return {"status": "ok"}
 
 @router.get("/ready", response_model=StandardResponse)
-async def readiness_check():
+async def readiness_check(driver: AsyncDriver = Depends(get_neo4j_driver)):
     """Readiness probe - checks downstream dependencies."""
     neo4j_status = "down"
     
     try:
-        driver = Neo4jDriver.get_instance()
         # Verify connection
         await driver.verify_connectivity()
         neo4j_status = "up"

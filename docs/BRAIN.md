@@ -19,14 +19,12 @@ Last updated by: Antigravity (correction pass #1)
 StadiumAI NOC is a real-time Network Operations Center platform for FIFA World Cup 2026 stadium management. It provides AI-powered crowd intelligence (density heatmaps, forecasts), graph-based wayfinding (shortest path, accessible routes via Neo4j), multilingual fan chat (Gemini 2.5 Flash), and automated incident triage with response-team dispatch. Built for a competition/hackathon submission with production-grade security hardening.
 
 - **Tech Stack:**
-  - **Backend:** Python ^3.12, FastAPI ^0.111.0, Uvicorn ^0.30.1, Neo4j driver ^5.21.0, Redis ^5.0.7, google-cloud-pubsub ^2.21.3, google-genai ^0.5.0, structlog ^24.2.0, python-jose ^3.3.0, google-auth ^2.30.0, sse-starlette <3.0.0, pydantic-settings ^2.3.4.
+  - **Backend:** Python ^3.12, FastAPI ^0.111.0, Uvicorn ^0.30.1, Neo4j driver ^5.21.0, Redis ^5.0.7, google-cloud-pubsub ^2.21.3, google-genai ^0.5.0, structlog ^24.2.0, python-jose ^3.3.0, google-auth ^2.30.0, pydantic-settings ^2.3.4.
   - **Frontend:** React ^19.2.7, React DOM ^19.2.7, Vite ^8.1.1, TypeScript ~6.0.2, TailwindCSS ^3.4.19, Zustand ^5.0.14, React Router DOM ^7.18.1, Framer Motion ^12.42.2, Lucide React ^1.24.0, Radix UI react-slot ^1.3.0, class-variance-authority ^0.7.1, clsx ^2.1.1, tailwind-merge ^3.6.0.
   - **DevDeps:** pytest ^8.2.2, pytest-asyncio ^0.23.7, httpx ^0.27.0, oxlint ^1.71.0.
-  - **Infrastructure:** Terraform (hashicorp/google ~> 5.0, hashicorp/google-beta ~> 5.0). GitHub Actions CI/CD (4 workflows).
-- **GCP Environment:**
-  - Project ID: **unconfirmed** — `stadiumai-project` appears in `backend/app/config.py` (default), `backend/.env.example`, and `cd-production.yml` (SA email `sa-cicd@stadiumai-project.iam`). However, `production.tfvars` is empty and no `terraform.tfvars` exists. Treat as placeholder until verified against live `gcloud` output.
-  - Region: `asia-south1` (Terraform default, confirmed in `infra/terraform/variables.tf` and CD workflows).
-  - Deployed Services (Terraform-defined, **not yet applied**): Cloud Run (`stadiumai-backend-prod`), Serverless VPC Access Connector (`stadiumai-vpc-cx`), Cloud NAT (`stadiumai-nat` with static IP `stadiumai-nat-ip`), Secret Manager (`jwt-secret`), IAM (`sa-runtime`).
+  - **Infrastructure:** Vercel (static frontend build + Python serverless functions runtime), Upstash Redis (rate limiting cache).
+- **GCP Environment (DEPRECATED):**
+  - All GCP/Terraform infrastructure configurations (`infra/terraform/`) and GCP CI/CD workflows are deprecated in favor of Vercel serverless deployment.
 
 ---
 
@@ -112,9 +110,9 @@ Project-4/
 
 ### ⚠️ CRITICAL UNVERIFIED ITEMS
 
-> **Terraform plan/apply has NEVER been run.** The development sandbox lacks `terraform` and `gcloud` CLI tools. All infrastructure code (`infra/terraform/`) is staged in files only. No `.terraform/` directory, no `*.tfstate`, no `*.tfplan` files exist. Every Terraform-managed resource (Cloud Run, VPC, NAT, IAM SAs, Secret Manager) exists only as HCL — none have been provisioned in GCP.
+> **Live Neo4j AuraDB connectivity has NEVER been tested.** The `verify_neo4j.py` script tests rejection of *unauthenticated* connections to `bolt://localhost:7687` — it does not test authenticated connection to the real AuraDB instance. No evidence of a successful `driver.verify_connectivity()` against the production URI exists anywhere. This remains a **high-risk unverified item** in the project.
 
-> **Live Neo4j AuraDB connectivity has NEVER been tested.** The `verify_neo4j.py` script tests rejection of *unauthenticated* connections to `bolt://localhost:7687` — it does not test authenticated connection to the real AuraDB instance. No evidence of a successful `driver.verify_connectivity()` against the production URI exists anywhere. This is the **single highest-risk unverified item** in the project.
+> **Vercel Serverless and Upstash Redis execution under live load**: Serverless functions execute statelessly and churn connections to Neo4j AuraDB. While the code has been updated to open and close connections cleanly per invocation, live load scalability remains unverified.
 
 ### Verified working (evidence from code inspection)
 
@@ -135,13 +133,12 @@ Project-4/
 
 ### Unverified / staged / assumed
 
-- **Terraform infrastructure**: NEVER applied. No tfstate exists. All GCP resources (Cloud Run service, VPC, NAT, SA, secrets) are code-only. Missing: `terraform init`, `terraform plan`, `terraform apply` execution.
+- **GCP Terraform Infrastructure**: Deprecated. No resources are provisioned on GCP.
 - **Neo4j AuraDB connectivity**: NEVER tested against real instance. `backend/.env` points to `bolt://localhost:7687`. Real AuraDB URI unknown/unconfirmed.
-- **AuraDB IP allow-list**: Cloud NAT static IP Terraform code is staged but never deployed. Even after deployment, the human must manually copy the IP to the AuraDB console. Not done.
-- **`sa_chat` service account destruction**: The architecture blueprint (`docs/architecture-blueprint.md` L651) still references `sa-chat@proj.iam` as a separate SA. In actual Terraform code (`modules/iam/main.tf`), only `sa-runtime` exists — `sa_chat` was never created in Terraform, so there is nothing to destroy. However, if `sa-chat` exists in the live GCP project from manual creation, it has not been verified via `gcloud iam service-accounts list`.
-- **JWT_SECRET in Secret Manager (live)**: Terraform `modules/secrets/main.tf` creates the `jwt-secret` secret with placeholder value `replace-me-in-production`. This has never been applied, and the actual secret value has never been set in Secret Manager.
-- **Frontend build**: `dist/` directory exists suggesting a past build, but current build success is unverified.
-- **Rate limiter Redis backing**: `middleware/rate_limit.py` uses in-memory dict, not Redis. The code comment notes this is a placeholder.
+- **AuraDB IP allow-list**: Deprecated for GCP. Access control to AuraDB now relies on username/password auth; IP allow-listing is optional.
+- **Vercel Env & Upstash Integration**: Local development uses in-memory fallbacks; verification of the actual Upstash Redis connection under serverless is pending env mapping.
+- **Frontend build**: Verified compile locally, but Vercel builder deployment execution is staged.
+- **Rate limiter Redis backing**: Implemented using the python `redis` client. Fallback to in-memory store is verified if Redis is not configured or offline.
 - **Stub files**: ~20+ files across backend and frontend are 17–18 byte stubs (listed in Architecture Snapshot). These represent planned but unimplemented features.
 - **CI/CD pipeline**: Workflows exist but have never been triggered (no evidence of GitHub Actions runs).
 - **Gemini API integration**: Orchestrator code is complete but relies on `GEMINI_API_KEY` which is absent from `.env`. The orchestrator gracefully degrades ("GenAI is currently offline") when key is missing.
@@ -153,14 +150,10 @@ Project-4/
 | Severity | Issue | Reference |
 |----------|-------|-----------|
 | **Critical** | Neo4j AuraDB live connectivity never tested — no confirmed connection to real AuraDB instance; `verify_neo4j.py` only tests localhost rejection | `backend/verify_neo4j.py`, `backend/.env` |
-| **Critical** | Terraform plan/apply never executed — all GCP infra is code-only, no resources provisioned | `infra/terraform/` (no `.tfstate`) |
-| **High** | AuraDB IP allow-list — Cloud NAT static IP code staged in `modules/networking/main.tf`, but (a) never deployed, (b) human must manually copy IP to Aura console post-deploy | `infra/terraform/modules/networking/main.tf`, `README.md` |
-| **High** | `sa_chat` service account — blueprint doc (`architecture-blueprint.md` L651) references `sa-chat@proj.iam`, but Terraform only defines `sa-runtime`. If `sa-chat` was manually created in GCP, it has NOT been verified destroyed via `gcloud iam service-accounts list` | `docs/architecture-blueprint.md` L651, `infra/terraform/modules/iam/main.tf` |
-| **High** | JWT_SECRET → Secret Manager migration — code correctly reads from `settings.jwt_secret` (no hardcoded value), Terraform creates `jwt-secret` in Secret Manager, Cloud Run config injects it. BUT: Terraform never applied, so Secret Manager secret doesn't actually exist yet. Placeholder value is `replace-me-in-production`. | `infra/terraform/modules/secrets/main.tf` L13, `modules/cloud-run/main.tf` L22-29 |
-| **High** | `production.tfvars` and `staging.tfvars` are completely empty — Terraform has no environment-specific configuration | `infra/terraform/environments/` |
-| **Medium** | Rate limiter uses in-memory dict, not Redis — will not work correctly across Cloud Run instances | `backend/app/middleware/rate_limit.py` L8 |
+| **High** | Vercel Deployment & Env mapping — Needs deployment configuration variables mapped via Vercel Dashboard for production access | Vercel Dashboard |
+| **High** | Upstash Redis connection limits — must verify connection pooling/limits on Upstash free tier under concurrent load | Upstash Console |
+| **Medium** | GCP Terraform Infrastructure (DEPRECATED) — staged GCP infra is deprecated in favor of Vercel migration | `infra/terraform/` |
 | **Medium** | ~20+ stub files (17-18 bytes) across backend services, frontend hooks/stores/pages — represent unimplemented features | Multiple (see Architecture Snapshot) |
-| **Medium** | `infra/scripts/deploy.sh` and `rotate-secrets.sh` are empty — no deployment or secret rotation automation | `infra/scripts/` |
 | **Medium** | Blueprint doc references per-service SAs (sa-navigation, sa-crowd, sa-chat, sa-incident, sa-ingest) that don't exist in Terraform — doc is stale/aspirational vs actual implementation | `docs/architecture-blueprint.md` L648-654 vs `infra/terraform/modules/iam/main.tf` |
 | **Low** | `Makefile` is empty | `Makefile` |
 | **Low** | `docs/runbook.md` is a 9-byte stub | `docs/runbook.md` |
@@ -177,6 +170,8 @@ Project-4/
 `2026-07-13 — [Multiple] — [Implemented Minimal Auth Flow] — [Added passlib/bcrypt, created /v1/auth/login, updated dependencies.py to strictly verify JWT. Frontend: added LoginPage, updated api.ts to inject token, updated authStore.ts] — [verified: yes, via e2e test: unauthenticated access redirects to /login, invalid creds return 401, valid creds redirect to dashboard and protected routes return 200]`
 
 `2026-07-15 — [Multiple] — [Implemented Tiered Access Control (Public Fan vs Staff Auth)] — [Routes reclassified: GET /v1/crowd/heatmap, GET /v1/crowd/zone/{id}, GET /v1/navigate/route, POST /v1/chat/message → PUBLIC (no verify_token). POST /v1/incidents → remains JWT-protected. Rate limiter rewritten with tiered limits (30/min public, 200/min staff), TTL-based cleanup (fixes memory leak), Retry-After headers. Chat endpoint gains 500-char input length limit. Guardrails call path verified: router→orchestrator→sanitize_input()→Gemini→validate_output(). Frontend: App.tsx restructured with ProtectedRoute guard, staff nav hidden for unauth'd users, default home is /fan not /login.] — [verified: yes, via verify_tiered_access.py (7/7 passed): crowd zone 200, navigate not-401, chat 200, incidents 401, 501-char chat 400, 500-char chat 200, rate limit 429 at req #26. Browser e2e: fan home loads without auth, staff nav hidden, /dashboard redirects to /login, login shows staff nav + dashboard]`
+
+`2026-07-18 — [Multiple] — [Migrated to Vercel and Upstash Redis] — [Converted Crowd Heatmap SSE to standard GET polling, refactored Neo4j driver connection to per-request lifecycle to prevent serverless stale socket issues, integrated Upstash Redis rate limiting in middleware, created root-level vercel.json and api/index.py entrypoint, deprecated GCP/Terraform configs] — [verified: local compilation and dependency checks passed]`
 
 ---
 
@@ -211,6 +206,7 @@ Project-4/
 | 2026-07-07 | Single `sa-runtime` service account for all Cloud Run services instead of per-service SAs (`sa-navigation`, `sa-crowd`, `sa-chat`, `sa-incident`, `sa-ingest`) | Cloud Run enforces a single service account per revision. True per-microservice SA separation would require separate Cloud Run services per domain, which is out of scope for the current monolithic FastAPI app. `sa-runtime` is given the union of required roles (`aiplatform.user`, `secretmanager.secretAccessor`, `redis.editor`) as a pragmatic least-privilege compromise. | Per-service dedicated SAs (aspirational, documented in `architecture-blueprint.md` L648-654, but not implementable with current single-service architecture) |
 | 2026-07-07 | Git repo initialized with comprehensive `.gitignore` excluding all secret files (`.env`, `*.tfvars`, `secrets.json`, `secrets/`, `*.tfstate`) **before first commit** | Prevents secret values from ever entering git history. Once a secret is in git history, it requires BFG/filter-branch to remove, which is operationally expensive. | Adding `.gitignore` after initial commits (risk of accidental secret commit in history) |
 | 2026-07-07 | JWT_SECRET moved from `.env` / code to Secret Manager, injected into Cloud Run via `secret_key_ref` | Eliminates the secret from local files and environment variable sprawl. Secret Manager provides audit logging, versioning, and rotation support. | Keeping JWT_SECRET as a plain env var in Cloud Run (no audit trail, no rotation) |
+| 2026-07-18 | Migration to Vercel and Upstash Redis | Vercel's serverless environment provides seamless deployment, zero-config frontend/backend routing, and scales dynamically, eliminating GCP Cloud Run configuration overhead. Upstash Redis provides native Vercel integration for serverless-safe rate limiting. | GCP Cloud Run / Memorystore deployment (rejected due to operational complexity and lack of sandbox CLI tooling) |
 
 ---
 
@@ -218,12 +214,7 @@ Project-4/
 
 | # | Item | Blocked On | Impact |
 |---|------|-----------|--------|
-| 1 | **Terraform apply**: All infrastructure is code-only. Need `terraform init` + `plan` + `apply` run against real GCP project. | Human with `gcloud` + `terraform` CLI access and sufficient IAM permissions | **Blocks everything** — no Cloud Run, no VPC, no NAT, no SA, no secrets exist until this runs |
-| 2 | **AuraDB IP allow-list**: After Terraform provisions the static NAT IP, the IP must be manually copied to the Neo4j AuraDB console's IP Allow-list | Human with AuraDB console access | Blocks all Neo4j connectivity from Cloud Run |
-| 3 | **`sa_chat` cleanup verification**: If `sa_chat` was created manually in GCP (outside Terraform), run `gcloud iam service-accounts list --project=stadiumai-project` to confirm it's been deleted. If it exists, delete it: `gcloud iam service-accounts delete sa-chat@stadiumai-project.iam.gserviceaccount.com` | Human with `gcloud` access | Dangling SA with unnecessary permissions is a security risk |
-| 4 | **JWT_SECRET actual value**: Secret Manager `jwt-secret` has placeholder `replace-me-in-production`. After Terraform apply, must set a real cryptographically-random value: `gcloud secrets versions add jwt-secret --data-file=-` | Human with Secret Manager admin access | Auth will fail in production with placeholder value |
-| 5 | **Neo4j AuraDB credentials**: Real `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` must be configured. Currently `.env` has `bolt://localhost:7687` / `localdev`. Need actual AuraDB connection string. | Human with AuraDB console access | Blocks all graph queries |
-| 6 | **Gemini API key**: `GEMINI_API_KEY` not set anywhere. Orchestrator gracefully degrades but chat/incident AI features are non-functional without it. | Human must provision API key or configure Vertex AI SA-based auth | Blocks AI features |
-| 7 | **GCP Project ID confirmation**: Is `stadiumai-project` the real project ID? Verify with `gcloud config get project` or `gcloud projects list`. | Human with `gcloud` access | If wrong, all Terraform and CD workflows will fail |
-| 8 | **production.tfvars population**: Empty file. Must contain at minimum `project_id = "..."`. | Human decision on environment-specific values | Terraform apply will fail or use wrong defaults |
-| 9 | **Workload Identity Federation setup**: CD workflow (`cd-production.yml`) references `projects/123456789/locations/global/workloadIdentityPools/github/providers/my-repo` — this is clearly a placeholder. Must configure real WIF pool. | Human with GCP IAM admin access | Blocks CI/CD deployment pipeline |
+| 1 | **Neo4j AuraDB credentials**: Real `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` must be configured in Vercel. Currently `.env` has localhost. | Human with AuraDB console credentials | Blocks graph/navigation routing |
+| 2 | **Upstash Redis URL**: Configure `REDIS_URL` in Vercel settings to point to the Upstash instance. | Human provisioning Upstash instance | Rate limits fallback to in-memory without this |
+| 3 | **Gemini API key**: `GEMINI_API_KEY` must be configured in Vercel environment variables. | Human provisioning Gemini API Key | AI chat and triage features are offline without this |
+| 4 | **JWT_SECRET actual value**: Must define a real cryptographically-random value for `JWT_SECRET` in Vercel. | Human deciding on key secret | Auth will fail or be insecure without this |

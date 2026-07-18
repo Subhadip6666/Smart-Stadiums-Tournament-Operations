@@ -16,8 +16,11 @@ logger = logging.getLogger(__name__)
 
 
 async def get_neo4j_driver() -> AsyncGenerator[AsyncDriver, None]:
-    driver = Neo4jDriver.get_instance()
-    yield driver
+    driver = Neo4jDriver.get_driver()
+    try:
+        yield driver
+    finally:
+        await driver.close()
 
 
 # In production, fetch JWKS from Firebase/GCP Identity Platform

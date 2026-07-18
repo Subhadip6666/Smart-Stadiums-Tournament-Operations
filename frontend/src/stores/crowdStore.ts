@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Zone, DensityBucket, CrowdUpdate } from '../types';
 import { getStaticMockZones } from '../services/api';
+import { useAuthStore } from './authStore';
 
 interface CrowdState {
   zones: Zone[];
@@ -63,28 +64,39 @@ export const useCrowdStore = create<CrowdState>((set, get) => ({
       set({ zones: getStaticMockZones() });
     }
 
-    const eventSource = new EventSource(url);
-
-    eventSource.onopen = () => {
-      set({ isConnected: true });
-    };
-
-    eventSource.addEventListener('density_update', (event) => {
+    const fetchUpdates = async () => {
       try {
-        console.log('SSE [density_update] event received:', event.data);
-        const data = JSON.parse(event.data) as CrowdUpdate;
-        get().handleCrowdUpdate(data);
-      } catch (err) {
-        console.error('Error parsing SSE crowd update:', err);
-      }
-    });
+        const token = useAuthStore.getState().token;
+        const headers: Record<string, string> = {
+          'Accept': 'application/json'
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
 
-    eventSource.onerror = () => {
-      set({ isConnected: false });
+        const response = await fetch(url, { headers });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Parse StandardResponse wrapper
+        const result = await response.json() as { data: CrowdUpdate };
+        get().handleCrowdUpdate(result.data);
+        set({ isConnected: true });
+      } catch (err) {
+        console.error('Error polling crowd updates:', err);
+        set({ isConnected: false });
+      }
     };
+
+    // Perform initial fetch immediately
+    fetchUpdates();
+
+    // Start polling every 4 seconds
+    const intervalId = setInterval(fetchUpdates, 4000);
 
     return () => {
-      eventSource.close();
+      clearInterval(intervalId);
       set({ isConnected: false });
     };
   },
