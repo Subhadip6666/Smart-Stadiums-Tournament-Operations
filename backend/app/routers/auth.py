@@ -4,6 +4,7 @@ from app.config import settings
 from jose import jwt
 from datetime import datetime, timedelta
 import bcrypt
+from app.models.schemas import StandardResponse
 
 router = APIRouter()
 
@@ -15,7 +16,7 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/login", response_model=StandardResponse)
 async def login(request: LoginRequest):
     # Validate against fixed demo account
     if request.username != settings.demo_account_username:
@@ -37,4 +38,4 @@ async def login(request: LoginRequest):
     }
     
     token = jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
-    return LoginResponse(access_token=token)
+    return StandardResponse(data=LoginResponse(access_token=token))
