@@ -5,7 +5,7 @@ from neo4j import AsyncDriver
 from neo4j.exceptions import Neo4jError, ServiceUnavailable, DriverError
 
 from app.models.schemas import RouteResponse
-from app.graph.queries import SHORTEST_PATH_QUERY, ACCESSIBLE_PATH_QUERY
+from app.graph.queries import SHORTEST_PATH_QUERY, ACCESSIBLE_PATH_QUERY, ECO_TRANSIT_PATH_QUERY
 
 logger = logging.getLogger(__name__)
 
@@ -35,11 +35,11 @@ class NavigationService:
         Raises:
             HTTPException: 404 if no path exists; 503 if Neo4j database is unreachable.
         """
-        # Determine appropriate Cypher pathfinding query
+        # Select parameterized Cypher query based on requested pathfinding mode
         if mode == "accessible":
             query = ACCESSIBLE_PATH_QUERY
         elif mode == "eco_transit":
-            query = SHORTEST_PATH_QUERY
+            query = ECO_TRANSIT_PATH_QUERY
         else:
             query = SHORTEST_PATH_QUERY
         
@@ -53,15 +53,6 @@ class NavigationService:
                     
                 segments: List[Dict[str, Any]] = record["route"]
                 walk_time: float = float(record["total_walk_time_s"])
-
-                # Eco-transit adjustment: add shuttle connection metadata if eco_transit mode selected
-                if mode == "eco_transit" and len(segments) > 0:
-                    segments.append({
-                        "node_id": "ECO-SHUTTLE-STOP-01",
-                        "name": "FIFA Green Shuttle Connection",
-                        "type": "transit",
-                        "walk_time_s": 0.0
-                    })
 
                 return RouteResponse(
                     route_id=f"rt-{from_id}-{to_id}",
