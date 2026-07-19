@@ -68,7 +68,7 @@ export const Dashboard: React.FC = () => {
               </span>
             </h3>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar" role="region" aria-label="Live incidents list" aria-live="polite">
             {filtered.map((inc, i) => (
               <div key={inc.id} className="animate-slide-in-up" style={{ animationDelay: `${i * 60}ms` }}>
                 <IncidentCard

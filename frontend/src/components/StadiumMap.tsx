@@ -109,7 +109,8 @@ export const StadiumMap: React.FC<StadiumMapProps> = ({ zones, onZoneClick, clas
                 onMouseEnter={() => setHoveredZone(zone.zone_id)}
                 onMouseLeave={() => setHoveredZone(null)}
                 tabIndex={0} role="button"
-                aria-label={`${zone.name}, density: ${zone.density_bucket}`}
+                aria-label={`${zone.name}, density level: ${zone.density_bucket}`}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onZoneClick?.(zone); } }}
               />
             </g>
           );
