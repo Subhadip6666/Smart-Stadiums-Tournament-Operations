@@ -210,6 +210,7 @@ Project-4/
 | 2026-07-07 | Git repo initialized with comprehensive `.gitignore` excluding all secret files (`.env`, `*.tfvars`, `secrets.json`, `secrets/`, `*.tfstate`) **before first commit** | Prevents secret values from ever entering git history. Once a secret is in git history, it requires BFG/filter-branch to remove, which is operationally expensive. | Adding `.gitignore` after initial commits (risk of accidental secret commit in history) |
 | 2026-07-07 | JWT_SECRET moved from `.env` / code to Secret Manager, injected into Cloud Run via `secret_key_ref` | Eliminates the secret from local files and environment variable sprawl. Secret Manager provides audit logging, versioning, and rotation support. | Keeping JWT_SECRET as a plain env var in Cloud Run (no audit trail, no rotation) |
 | 2026-07-18 | Migration to Vercel and Upstash Redis | Vercel's serverless environment provides seamless deployment, zero-config frontend/backend routing, and scales dynamically, eliminating GCP Cloud Run configuration overhead. Upstash Redis provides native Vercel integration for serverless-safe rate limiting. | GCP Cloud Run / Memorystore deployment (rejected due to operational complexity and lack of sandbox CLI tooling) |
+| 2026-07-19 | Final Code Quality & Alignment Polish | Extracted config constants, added complete Python type hints and Google-style docstrings, added Eco Transit mode, and verified all 16 tests pass with 0 warnings/errors on linter. | Leaving undocumented service functions or missing transit options |
 
 ---
 
