@@ -6,7 +6,7 @@ import { Spinner } from '../components/common/Loader';
 import { useRoute } from '../hooks/useRoute';
 import { getMockLocations } from '../services/api';
 import type { NavigationMode } from '../types';
-import { MapPin, Navigation, Accessibility } from 'lucide-react';
+import { MapPin, Navigation, Accessibility, Leaf } from 'lucide-react';
 
 const locations = getMockLocations();
 
@@ -30,7 +30,7 @@ export const NavigatePage: React.FC = () => {
           </div>
           <div>
             <h2 className="text-lg font-bold text-slate-100">Stadium Wayfinding</h2>
-            <p className="text-xs text-slate-400">Dijkstra-powered shortest-path navigation</p>
+            <p className="text-xs text-slate-400">Dijkstra-powered shortest-path & sustainable transportation navigation</p>
           </div>
         </div>
 
@@ -72,6 +72,11 @@ export const NavigatePage: React.FC = () => {
               onClick={() => setMode('accessible')}
               className={`px-3 py-2 rounded-md text-xs font-medium transition-all cursor-pointer flex items-center gap-1 ${mode === 'accessible' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
               <Accessibility className="h-3 w-3" /> Accessible
+            </button>
+            <button
+              onClick={() => setMode('eco_transit')}
+              className={`px-3 py-2 rounded-md text-xs font-medium transition-all cursor-pointer flex items-center gap-1 ${mode === 'eco_transit' ? 'bg-teal-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
+              <Leaf className="h-3 w-3 text-teal-300" /> Eco Transit
             </button>
           </div>
 

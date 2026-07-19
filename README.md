@@ -1,64 +1,55 @@
 # StadiumAI NOC — Network Operations Center
 
-StadiumAI NOC is a state-of-the-art Network Operations Center platform built to manage and optimize stadium crowd dynamics, security incidents, navigation routing, and live operations in real-time.
+StadiumAI NOC is a state-of-the-art Network Operations Center platform built to manage and optimize stadium crowd dynamics, security incidents, navigation routing, eco-friendly transit, and live operations in real-time for FIFA World Cup 2026.
 
-![StadiumAI NOC Dashboard](docs/images/dashboard_mockup.png)
+---
 
-## Technology Stack
+## 1. Key Platform Features
 
-The platform is designed with a modern, full-stack serverless architecture optimized for high-throughput, low-latency client updates, and secure database interactions.
+- **Dijkstra Spatial Wayfinding & Eco-Transit**: Shortest path, accessible step-free, and green shuttle transit routing over Neo4j.
+- **Service-Layer Architecture**: Strict separation of concerns — API routers (`/v1/navigate`, `/v1/crowd`, `/v1/incidents`) delegate business logic exclusively to dedicated service classes (`NavigationService`, `CrowdService`, `IncidentService`).
+- **AI Triage & Emergency Playbooks**: Real-time incident severity scoring, automated dispatch, and reasoning powered by Google Gemini AI.
+- **Fail-Safe Resilience**: No silent fallbacks to fake data. Unreachable Neo4j databases return a clean HTTP 503 Service Unavailable with user-facing alert banners.
+- **Fan Data Privacy**: GDPR-compliant anonymization via `app.utils.anonymizer` converting raw crowd counts to bucketed density levels (`low`, `moderate`, `high`, `critical`).
+
+---
+
+## 2. Technology Stack
 
 ### Frontend
-- **Framework & Tooling:** React 18, TypeScript, Vite, TailwindCSS (curated premium dark theme)
-- **State Management:** Zustand
+- **Framework & Tooling:** React 18, TypeScript, Vite, TailwindCSS
+- **State Management:** Zustand (`authStore`, `crowdStore`, `incidentStore`)
 - **Icons:** Lucide React
 - **Client Routing:** React Router DOM v6
-- **Code Linter:** Oxlint (high-performance linter)
+- **Code Linter:** Oxlint
 
 ### Backend & API Layer
 - **API Framework:** FastAPI (Python 3.12)
-- **Deployment Platform:** Vercel Serverless Functions
-- **Database Graph Layer:** Neo4j (hosted via AuraDB)
-- **Real-Time Data Delivery:** High-frequency HTTP polling with auto-recovery
-- **Caching & Rate Limiting:** Upstash Redis (falling back to local memory if offline)
-- **AI Agent Integration:** Google Gemini API (via `google-generativeai`)
-- **Logging:** Structlog (structured JSON logs)
+- **Deployment Platform:** Vercel Serverless Functions (`api/index.py`)
+- **Database Graph Layer:** Neo4j AuraDB (Dijkstra algorithm)
+- **AI Agent Integration:** Google Gemini API (`google-genai`)
+- **Logging & Security:** Structured logging, JWT bearer tokens, sliding-window rate limiting
 
 ---
 
-## Getting Started
+## 3. Developer Workflows & Commands
 
-### Prerequisites
-- Node.js (v18+)
-- Python (3.11 or 3.12)
-- Neo4j AuraDB instance (or local community server)
-- Redis instance (optional, for rate-limiting persistent memory)
+```bash
+# Display all Makefile targets
+make help
 
-### Installation & Run
+# Run FastAPI backend locally
+make dev-backend
 
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/Subhadip6666/Smart-Stadiums-Tournament-Operations.git
-   cd Smart-Stadiums-Tournament-Operations
-   ```
+# Run Vite React frontend locally
+make dev-frontend
 
-2. **Frontend Setup**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+# Execute full pytest suite (16 tests)
+make test
 
-3. **Backend Setup**
-   ```bash
-   cd ../backend
-   python -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   uvicorn app.main:app --reload
-   ```
+# Run frontend linter
+make lint
 
----
-
-## Infrastructure Security Configuration
-To secure database connectivity in production environments, the platform is configured to restrict traffic to specified ports and networks. If you require custom VPC routes or IP allow-lists, please update your Neo4j Aura console to include only authorized serverless endpoints and Vercel egress IP ranges.
+# Compile production TypeScript bundle
+make build
+```

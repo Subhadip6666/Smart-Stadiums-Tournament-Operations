@@ -1,5 +1,22 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
+from typing import Optional, List, Dict
+
+# Domain Constants for Stadium Operations
+DEFAULT_STADIUM_ID: str = "STAD-01"
+
+STADIUM_ZONES: List[str] = [
+    "Z-CONC-N", "Z-GATE-E", "Z-PLAZ-E", "Z-VIP-S", "Z-ESC-S", 
+    "Z-SEAT-W1", "Z-CONC-W", "Z-CORN-NW", "Z-CORN-NE", "Z-FOOD-N", 
+    "Z-MERC", "Z-MED-1"
+]
+
+PLAYBOOK_MESSAGES: Dict[str, str] = {
+    "PB-MED-01": "Medical First Responders Dispatched",
+    "PB-FIRE-02": "Fire Safety Team Dispatched",
+    "PB-CROWD-03": "Crowd Management Operations Dispatched",
+    "PB-SEC-01": "Stadium Security Alpha Dispatched",
+    "PB-DEFAULT": "Rapid Response Unit Dispatched"
+}
 
 class Settings(BaseSettings):
     project_name: str = "StadiumAI NOC"

@@ -137,7 +137,7 @@ export interface ChatResponse {
 
 // ── Navigation ────────────────────────────────────────────────
 
-export type NavigationMode = 'shortest' | 'accessible';
+export type NavigationMode = 'shortest' | 'accessible' | 'eco_transit';
 
 export interface RouteSegment {
   id: string;

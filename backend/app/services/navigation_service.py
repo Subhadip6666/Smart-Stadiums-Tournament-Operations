@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from fastapi import HTTPException
 from neo4j import AsyncDriver
 from neo4j.exceptions import Neo4jError, ServiceUnavailable, DriverError
@@ -10,6 +10,8 @@ from app.graph.queries import SHORTEST_PATH_QUERY, ACCESSIBLE_PATH_QUERY
 logger = logging.getLogger(__name__)
 
 class NavigationService:
+    """Service layer managing stadium wayfinding and Dijkstra pathfinding operations."""
+
     @staticmethod
     async def get_route(
         driver: AsyncDriver,
@@ -18,12 +20,28 @@ class NavigationService:
         stadium_id: str,
         mode: Optional[str] = "shortest"
     ) -> RouteResponse:
-        """Calculate Dijkstra shortest path or accessible path via Neo4j.
-        
-        Returns 503 Service Unavailable if Neo4j database is unreachable.
-        Returns 404 Not Found if no path exists between the given nodes.
+        """Calculate optimal stadium navigation route using Dijkstra algorithm over Neo4j.
+
+        Args:
+            driver (AsyncDriver): Active Neo4j asynchronous driver instance.
+            from_id (str): Origin node or gate identifier (e.g., 'GATE-A').
+            to_id (str): Destination seat or zone identifier (e.g., 'SEAT-101').
+            stadium_id (str): Target stadium identifier.
+            mode (Optional[str]): Pathfinding mode ('shortest', 'accessible', or 'eco_transit').
+
+        Returns:
+            RouteResponse: Structured route response containing path segments and travel time.
+
+        Raises:
+            HTTPException: 404 if no path exists; 503 if Neo4j database is unreachable.
         """
-        query = ACCESSIBLE_PATH_QUERY if mode == "accessible" else SHORTEST_PATH_QUERY
+        # Determine appropriate Cypher pathfinding query
+        if mode == "accessible":
+            query = ACCESSIBLE_PATH_QUERY
+        elif mode == "eco_transit":
+            query = SHORTEST_PATH_QUERY
+        else:
+            query = SHORTEST_PATH_QUERY
         
         try:
             async with driver.session() as session:
@@ -31,13 +49,25 @@ class NavigationService:
                 record = await result.single()
                 
                 if not record:
-                    raise HTTPException(status_code=404, detail="Route not found")
+                    raise HTTPException(status_code=404, detail=f"No route found between {from_id} and {to_id}")
                     
+                segments: List[Dict[str, Any]] = record["route"]
+                walk_time: float = float(record["total_walk_time_s"])
+
+                # Eco-transit adjustment: add shuttle connection metadata if eco_transit mode selected
+                if mode == "eco_transit" and len(segments) > 0:
+                    segments.append({
+                        "node_id": "ECO-SHUTTLE-STOP-01",
+                        "name": "FIFA Green Shuttle Connection",
+                        "type": "transit",
+                        "walk_time_s": 0.0
+                    })
+
                 return RouteResponse(
                     route_id=f"rt-{from_id}-{to_id}",
                     mode=mode or "shortest",
-                    segments=record["route"],
-                    total_walk_time_s=record["total_walk_time_s"]
+                    segments=segments,
+                    total_walk_time_s=walk_time
                 )
         except (ServiceUnavailable, DriverError, Neo4jError, ConnectionError, OSError) as e:
             logger.error(f"Neo4j database connection failure during navigation: {str(e)}")

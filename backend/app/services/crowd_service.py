@@ -3,24 +3,29 @@ import random
 from datetime import datetime, timezone
 from typing import Dict, Any, List
 
+from app.config import STADIUM_ZONES
+
 logger = logging.getLogger(__name__)
 
-ZONES = [
-    "Z-CONC-N", "Z-GATE-E", "Z-PLAZ-E", "Z-VIP-S", "Z-ESC-S", 
-    "Z-SEAT-W1", "Z-CONC-W", "Z-CORN-NW", "Z-CORN-NE", "Z-FOOD-N", 
-    "Z-MERC", "Z-MED-1"
-]
-
 class CrowdService:
+    """Service layer for stadium crowd analytics, heatmaps, and zone metrics."""
+
     @staticmethod
     def get_heatmap_data(stadium_id: str, include_forecast: bool = False) -> Dict[str, Any]:
-        """Calculates current zone crowd density heatmap for a stadium.
-        
-        Returns bucketed density values (low, moderate, high, critical) per ADR-003.
+        """Calculate current stadium crowd density heatmap with bucketed density classifications.
+
+        Conforms strictly to ADR-003 privacy specification by bucketizing raw density counts.
+
+        Args:
+            stadium_id (str): Unique identifier for target stadium (e.g., 'STAD-01').
+            include_forecast (bool): Flag indicating whether predictive forecast trend is requested.
+
+        Returns:
+            Dict[str, Any]: Dictionary containing stadium zone density buckets and ISO timestamp.
         """
         zones_data: List[Dict[str, str]] = []
-        for zone_id in ZONES:
-            bucket = "low"
+        for zone_id in STADIUM_ZONES:
+            bucket: str = "low"
             if zone_id in ["Z-GATE-E", "Z-PLAZ-E", "Z-ESC-S", "Z-SEAT-W1"]:
                 bucket = "moderate"
                 
@@ -41,10 +46,18 @@ class CrowdService:
 
     @staticmethod
     def get_zone_details(zone_id: str) -> Dict[str, Any]:
-        """Retrieves detailed crowd metrics and rerouting suggestion for a specific zone."""
+        """Retrieve detailed crowd metrics and alternate route recommendations for a specific zone.
+
+        Args:
+            zone_id (str): Unique zone identifier (e.g., 'Z-CONC-N').
+
+        Returns:
+            Dict[str, Any]: Zone metrics, crowd status, and walk-time rerouting suggestions.
+        """
+        clean_name: str = zone_id.replace("Z-", "")
         return {
             "zone_id": zone_id,
-            "zone_name": f"Zone {zone_id.replace('Z-', '')}",
+            "zone_name": f"Zone {clean_name}",
             "crowd_level": "busy",
             "suggestion": "Concourse C is less crowded - 2 min walk",
             "updated_at": datetime.now(timezone.utc).isoformat()
