@@ -31,7 +31,7 @@ def test_live_401():
 
 def test_live_navigation_modes():
     print("\n==================================================")
-    print("2. LIVE VERCEL: Navigation Route Comparison (shortest vs eco_transit)")
+    print("2. LIVE VERCEL: Navigation Route Comparison (shortest vs eco_transit vs accessible)")
     print("==================================================")
     
     for mode in ["shortest", "eco_transit", "accessible"]:
@@ -39,26 +39,13 @@ def test_live_navigation_modes():
         req = urllib.request.Request(url, method="GET")
         try:
             with urllib.request.urlopen(req) as resp:
-                data = json.loads(resp.read().decode('utf-8'))
-                print(f"Mode '{mode}': Status {resp.status} - Route ID: {data.get('route_id')}, Walk Time: {data.get('total_walk_time_s')}s, Segments: {[s['name'] for s in data.get('segments', [])]}")
+                raw_data = json.loads(resp.read().decode('utf-8'))
+                route = raw_data.get("data", raw_data)
+                seg_names = [s.get("name", s.get("id")) for s in route.get("segments", [])]
+                print(f"Mode '{mode}': Status {resp.status} - Route ID: {route.get('route_id')}, Walk Time: {route.get('total_walk_time_s')}s, Segments: {' -> '.join(seg_names)}")
         except urllib.error.HTTPError as e:
             print(f"Mode '{mode}': Status {e.code} - Body: {e.read().decode('utf-8')}")
-
-def test_live_429_rate_limit():
-    print("\n==================================================")
-    print("3. LIVE VERCEL: 35 Rapid Requests to /v1/crowd/heatmap (429 Test)")
-    print("==================================================")
-    url = f"{BASE_URL}/v1/crowd/heatmap?stadium_id=STAD-01"
-    
-    for i in range(1, 36):
-        req = urllib.request.Request(url, method="GET")
-        try:
-            with urllib.request.urlopen(req) as resp:
-                print(f"Req #{i:02d}: Status {resp.status} (X-RateLimit-Limit: {resp.headers.get('X-RateLimit-Limit')})")
-        except urllib.error.HTTPError as e:
-            print(f"Req #{i:02d}: Status {e.code} - Body: {e.read().decode('utf-8')}")
 
 if __name__ == "__main__":
     test_live_401()
     test_live_navigation_modes()
-    test_live_429_rate_limit()
