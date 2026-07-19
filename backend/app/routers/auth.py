@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.config import settings
 from jose import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import bcrypt
 from app.models.schemas import StandardResponse
 
@@ -30,7 +30,7 @@ async def login(request: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid credentials")
         
     # Issue JWT token (valid for 8 hours for a NOC shift)
-    expires = datetime.utcnow() + timedelta(hours=8)
+    expires = datetime.now(timezone.utc) + timedelta(hours=8)
     payload = {
         "sub": request.username,
         "role": "operator",

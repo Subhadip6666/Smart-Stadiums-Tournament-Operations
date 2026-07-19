@@ -20,12 +20,11 @@ def sanitize_input(message: str) -> str:
 def validate_output(reply: str) -> bool:
     """Ensure the GenAI reply doesn't leak the system prompt or constraints."""
     forbidden = [
-        "FIFA World Cup 2026", # Context term, but shouldn't be repeated verbatim if asked about system instructions
         "system_instruction",
+        "system instruction",
         "system prompt"
     ]
     
-    # Just a naive check, if it returns False, we should return a fallback message
     for term in forbidden:
         if term.lower() in reply.lower():
             return False

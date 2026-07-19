@@ -173,6 +173,9 @@ Project-4/
 
 `2026-07-18 — [Multiple] — [Migrated to Vercel and Upstash Redis] — [Converted Crowd Heatmap SSE to standard GET polling, refactored Neo4j driver connection to per-request lifecycle to prevent serverless stale socket issues, integrated Upstash Redis rate limiting in middleware, created root-level vercel.json and api/index.py entrypoint, deprecated GCP/Terraform configs] — [verified: local compilation and dependency checks passed]`
 
+`2026-07-19 — [Multiple] — [High-ROI Refactoring & Problem Alignment Fixes (Attempt 1 Pass)] — [Refactored navigation.py, crowd.py, and incidents.py to delegate to dedicated service classes (NavigationService, CrowdService, IncidentService). Implemented 503 Service Unavailable handling in NavigationService when Neo4j is down (eliminating silent fake-data fallbacks). Wired POST /v1/incidents to Gemini AI orchestrator. Updated docs/architecture-blueprint.md IAM section to reflect single sa-runtime SA configuration. Deleted 5 redundant stub files (middleware/auth.py, middleware/cors.py, utils/telemetry.py, models/enums.py, models/neo4j_models.py). Implemented unit & integration tests for auth gating, rate limits, navigation 503 error handling, crowd density, anonymizer, and guardrails.] — [verified: yes, 13/13 pytest unit & integration tests passing]`
+
+
 ---
 
 ## 6. Environment & Secrets Map (names only, never values)

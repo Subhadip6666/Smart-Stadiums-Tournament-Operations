@@ -81,7 +81,11 @@ export const NavigatePage: React.FC = () => {
           </Button>
         </div>
 
-        {error && <p className="text-sm text-red-400 mt-3">{error}</p>}
+        {error && (
+          <div className="mt-4 p-3.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-medium flex items-center gap-2">
+            <span>⚠️ {error}</span>
+          </div>
+        )}
       </div>
 
       {/* Results */}

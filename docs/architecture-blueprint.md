@@ -640,18 +640,15 @@ Gemini-generated situation summary for an incident.
 
 ## 5. Security Architecture
 
-### 5.1 IAM — Least-Privilege Service Accounts
+### 5.1 IAM — Unified Least-Privilege Service Account (`sa-runtime`)
 
-> **CAUTION:** Never use the default Compute Engine service account. Each Cloud Run service has a dedicated, scoped SA.
+> **NOTE:** Cloud Run enforces a single service account per deployed revision. Rather than deploying separate microservice Cloud Run instances for each domain, the unified backend runtime uses a single service account (`sa-runtime@stadiumai-project.iam.gserviceaccount.com`) configured with least-privilege roles across all required backends.
 
 | Service Account | Attached To | IAM Roles (Scoped) |
 |----------------|-------------|---------------------|
-| `sa-navigation@proj.iam` | Navigation Service | `roles/secretmanager.secretAccessor` (secret: `neo4j-creds`), `roles/redis.editor` |
-| `sa-crowd@proj.iam` | Crowd Intelligence | `roles/pubsub.subscriber` (topic: `sensor-events`), `roles/redis.editor`, `roles/aiplatform.user` |
-| `sa-chat@proj.iam` | Chat Service | `roles/aiplatform.user`, `roles/secretmanager.secretAccessor` (secret: `gemini-api-key`), `roles/redis.editor` |
-| `sa-incident@proj.iam` | Incident Ops | `roles/aiplatform.user`, `roles/secretmanager.secretAccessor`, `roles/redis.editor` |
-| `sa-ingest@proj.iam` | Sensor Ingest | `roles/pubsub.publisher` (topic: `sensor-events`) |
-| `sa-cicd@proj.iam` | Cloud Build | `roles/run.admin`, `roles/artifactregistry.writer`, `roles/secretmanager.secretAccessor` |
+| `sa-runtime@stadiumai-project.iam` | Cloud Run Backend Monolith | `roles/aiplatform.user`, `roles/secretmanager.secretAccessor`, `roles/redis.editor` |
+| `sa-cicd@stadiumai-project.iam` | GitHub Actions Workload Identity | `roles/run.admin`, `roles/artifactregistry.writer`, `roles/secretmanager.secretAccessor` |
+
 
 ### 5.2 Network Isolation — Neo4j AuraDB
 

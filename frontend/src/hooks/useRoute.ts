@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { RouteResult, NavigationMode } from '../types';
-import { api, getMockRoute } from '../services/api';
+import { api } from '../services/api';
 
 interface UseRouteReturn {
   route: RouteResult | null;
@@ -26,14 +26,16 @@ export function useRoute(): UseRouteReturn {
       setRoute(null);
 
       try {
-        // Try real API
         const response = await api.getRoute(from, to, 'metlife-stadium', mode);
-        setRoute(response.data as RouteResult);
-      } catch {
-        // Fall back to mock
-        await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
-        const mockResult = getMockRoute(from, to, mode);
-        setRoute(mockResult);
+        if (response && response.data) {
+          setRoute(response.data as RouteResult);
+        } else {
+          setError('Navigation temporarily unavailable.');
+        }
+      } catch (err: any) {
+        const errMsg = err?.response?.data?.detail || err?.message || 'Navigation temporarily unavailable due to database connectivity issue.';
+        setError(errMsg);
+        setRoute(null);
       } finally {
         setIsLoading(false);
       }
